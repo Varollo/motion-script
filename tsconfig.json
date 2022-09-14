@@ -1,0 +1,10 @@
+{
+  "compileOnSave": true,
+  "compilerOptions": {
+      "target": "ES2017",
+      "watch": true,
+      "lib": [ "DOM", "ES2017" ],
+      "outFile": "./dist/build/main.js",
+      "module": "AMD"
+  }
+}

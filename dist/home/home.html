@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MotionScript</title>
+
+    <script src="https://unpkg.com/lodash@4.16.6"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../shared/styles/sharedStyle.css"></link>
+    <link rel="stylesheet" href="style.css">
+
+    <script src="https://requirejs.org/docs/release/2.3.6/comments/require.js"></script>
+    <script type="module" src='../build/main.js'></script>
+    <script>requirejs(["home/src/Test"])</script>
+</head>
+<body>
+    <header>
+        <img id="logoImg" src="../shared/assets/logo.svg"></img>
+        <p id="subtitle">Animate with code</p>
+    </header>
+    <div class="CenterHorizontal">
+        <canvas id="mainCanvas"></canvas>
+        <div>
+            <button id="playBtn">
+                <img src="assets/play-svgrepo-com.svg"></img>
+            </button>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,50 @@
+body{
+    background-color: #252c3d;
+    color: #d42461;
+    font-family: 'Nunito', sans-serif;
+
+    margin: 20%;
+}
+
+img#logoImg{
+    width: 96%;
+    margin: 2%;
+    margin-bottom: 0;
+}
+
+p#subtitle{
+    color: #d42461BB;
+    text-align: center;
+    font-weight: bold;
+    margin-top: 0;
+}
+
+canvas#mainCanvas{
+    width: 80%;
+
+    margin: 10%;
+    margin-top: 100px;
+    margin-bottom: 25px;
+
+    outline-width: 10px;
+    outline-style: dashed;
+}
+
+button#playBtn{
+    background: none;
+
+    margin-left: 45%;
+    margin-right: 45%;
+
+    aspect-ratio: 1;
+    width: 10%;
+
+    border-radius: 30%;
+    border-color: #d42461;
+    border-style: solid;
+    border-width: 4px;
+}
+
+button#playBtn img{
+    width: 100%;
+}
