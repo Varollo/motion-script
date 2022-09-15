@@ -1,7 +1,9 @@
 import { Debugger } from '../Debug/Debugger.js';
 import { Color } from './Color.js';
 import { IBackground } from './Background/IBackground';
-import { MotionScript, MSEventKeys } from '../Core/MotionScript';
+import { MotionScript } from '../Core/MotionScript';
+import { MSEventKeys } from "../Core/Events/MSEventKeys";
+import { MSAddEventListenerOptions } from '../Core/Events/MSEventListener.js';
 
 export enum CanvasContextType{ CANVAS_2D = '2d', CANVAS_3D = 'webgl' }
 
@@ -37,7 +39,13 @@ export class Graphics {
         if(ctx) { Graphics._canvas = canvas; Graphics.context = ctx; }
         else throw Debugger.error(`Couldn't get context in Canvas \"${canvas}\"`, "Graphics", new TypeError);  
         
-        MotionScript.MS.addEventListener(MSEventKeys.Draw, Graphics.Draw);
+        MotionScript.MS.addEventListener(MSEventKeys.Draw, Graphics.Draw, { order: -1 } as MSAddEventListenerOptions);
+    }
+
+    public static setCanvas(canvas: HTMLCanvasElement | string, canvasOptions: {width: number, height: number} = {width: undefined, height: undefined}){
+        this.canvas = canvas;        
+        if(canvasOptions.width) this.canvas.width = canvasOptions.width;
+        if(canvasOptions.height) this.canvas.height = canvasOptions.height;
     }
 
     public static createCanvas(width = Graphics.CANVAS_DEFAULT_WIDTH, height = Graphics.CANVAS_DEFAULT_HEIGHT, parentElement?: HTMLElement, options?: ElementCreationOptions): HTMLCanvasElement {
@@ -54,7 +62,7 @@ export class Graphics {
         return newCanvas;
     }
 
-    static Draw(e: CustomEvent) {
+    private static Draw(e: CustomEvent) {
         if(!Graphics.context) return;
         switch (Graphics.canvasContext) {
             case CanvasContextType.CANVAS_3D:
