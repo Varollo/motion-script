@@ -1,23 +1,88 @@
+import { MotionScript } from './MotionScript';
+
 export class Time {
-    private static _frameCount: number = 0;
-    private static _lastFrameStartTime: number = 0.0;
-    private static _deltaTime: number = 0.0;
+    private static _pauseTimeOut: number = undefined;
+
+    private static _targetFps: number = 60;
     private static _paused: boolean = false;
-    private static _gameStartTime: number = Date.now();
     
-    public static get frameCount(): number { return this._frameCount; }
-    private static set frameCount(value: number) { this._frameCount = value; }
+    private static _targetDeltaTime: number = Math.round(1000/Time._targetFps);
 
-    public static get deltaTime(): number { return this._deltaTime; }
-    private static set deltaTime(value: number) { this._deltaTime = value; }
+    private static _deltaTime: number = 0;
+    private static _fixedDeltaTime: number = Time._targetDeltaTime;
+    
+    private static _realDeltaTime: number = 0;
+    private static _realFixedDeltaTime: number;
+        
+    private static _frameCount: number = 0;
+    private static _fixedFrameCount: number = 0;
 
-    public static get paused(): boolean { return this._paused; }
-    public static set paused(value: boolean) { this._paused = value; }
+    private static _lastFrameTime: number = 0;
+    private static _lastFixedFrameTime: number = 0;
+    
+    private static _instanceTime: number = Date.now();
+    
+    public static get targetFps(): number { return Time._targetFps; }
+    public static set targetFps(value: number) { Time._targetFps = value; Time._targetDeltaTime = value  * 1000; }
+    
+    public static get paused(): boolean { return Time._paused; }
+    private static set paused(value: boolean) { Time._paused = value; }
+    
+    public static get targetDeltaTime(): number { return Time._targetDeltaTime; }
+    public static set targetDeltaTime(value: number) { Time._targetDeltaTime = value; Math.round(Time._targetFps = 1000 /value); }
+    
+    public static get deltaTime(): number { return Time._deltaTime; }
+    private static set deltaTime(value: number) { Time._deltaTime = value; }
+    
+    public static get fixedDeltaTime(): number { return Time._fixedDeltaTime; }
+    public static set fixedDeltaTime(value: number) { Time._fixedDeltaTime = value; MotionScript.beginFixedLoop(); }
+    
+    public static get realDeltaTime(): number { return Time._realDeltaTime; }
+    private static set realDeltaTime(value: number) { Time._realDeltaTime = value; }
+
+    public static get realFixedDeltaTime(): number { return Time._realFixedDeltaTime; }
+    public static set realFixedDeltaTime(value: number) { Time._realFixedDeltaTime = value; }
+    
+    public static get frameCount(): number { return Time._frameCount; }
+    private static set frameCount(value: number) { Time._frameCount = value; }  
+
+    public static get fixedFrameCount(): number { return Time._fixedFrameCount; }
+    private static set fixedFrameCount(value: number) { Time._fixedFrameCount = value; }
+
+    /**
+     * Pauses time
+     * @param [length] how long should it be paused
+     */
+    public static pause(length: number = undefined){
+        Time.paused = true;
+
+        if(length != undefined) 
+            Time._pauseTimeOut = setTimeout(() => { Time.resume(); }, length);
+    }
+
+    /**
+     * Resumes time
+     */
+    public static resume() {
+        Time.clearPauseTimeout();
+        Time.paused = false;
+    }
+
+    /**
+     * Toggles time ON and OFF     
+     * @return {boolean} The new state of the pause
+     */
+    public static toggle() : boolean { 
+        Time.clearPauseTimeout(); 
+        Time.paused = !Time.paused; 
+
+        return Time.paused; 
+    }
 
     /**
      * Gets the time the game was started
      */
-    public static get gameStartTime(): number { return this._gameStartTime; }
+    public static get instanceTime(): number { return Time._instanceTime; }
 
     /**
      * Gets current time
@@ -27,27 +92,70 @@ export class Time {
     /**
      * Gets current time since the game loaded.
      */
-    public static get gameTime(): number { return this.realTime - this.gameStartTime; }
+    public static get time(): number { return Time.realTime - Time.instanceTime; }
 
     /**
      * Advances the frame count
      * and calculates delta time this frame.
      * @param {boolean} [silent=false] should it advance the frame count?
      */
-    public static advanceFrame(silent = false) {
-        const thisFrameStartTime = this.gameTime / 1000;
+    public static advanceFrame(silent = false) : boolean{
+        /**
+         * === COMPUTING BIASED DELTA TIME ===
+         * 1. [ tdt = 1000 /tFps                         ] => take the ratio of 1000 milliseconds (a.k.a a full second) by our target frames per second to get the target delta time
+         * 2. [ dt1 = t1 - t0                            ] => calculate the real delta time on this frame by taking te difference of the time this frame and the time last frame
+         * 3. [ avg = (dt0 + dt1) /2                     ] => take the average delta time on this and last frames
+         * 4. [ bdt = (avg + tdt) /2                     ] => our biased delta time will be the average of that with the target delta time
+         * 5. [ bdt = (dt0 + dt1) * 0.25 + tFps * 0.0005 ] => we can apply some optimizations and simplify everything into a single formula
+         * 6. [ bdt = (dt0 + dt1) * 0.25 + tdt  * 0.5    ] => finally, we can store the target delta time, so we don't have to compute it every frame
+         */
 
-        this.deltaTime = thisFrameStartTime - this._lastFrameStartTime;
-        this._lastFrameStartTime = thisFrameStartTime;
-        this.frameCount += silent ? 0 : 1;
+        const t0  = Time._lastFrameTime;            // time last frame         (-)
+        const t1  = Time.time;                      // time this frame         (-)
+        const tdt = this.targetDeltaTime            // target delta time       (1)
+        const dt0 = Time.realDeltaTime;             // last frame's delta time (-)
+        const dt1 = t1 - t0;                        // this frame's delta time (2)
+        const bdt = (dt0 + dt1) * 0.5 + tdt;        // biased delta time       (6)
+
+        if(bdt) {
+            Time._lastFrameTime = t1;
+            Time.realDeltaTime = dt1;
+            Time.deltaTime = Math.round(bdt);
+            Time.frameCount += silent ? 0 : 1;
+            return true;
+        }
+        else{
+            return false;
+        }
     }
 
-    static sleep(t: number) {
+    /**
+     * Advances the fixed frame count
+     * and calculates fixed delta time this frame (should be constant but better safe than sorry)
+     * @param {boolean} [silent=false] should it advance the frame count?
+     */
+    public static advanceFixedFrame(silent = false){
+        const t0 = Time._lastFixedFrameTime;
+        const t1 = Time.time;
+
+        Time.fixedFrameCount += silent ? 0 : 1;
+        Time.realFixedDeltaTime = t1 - t0;
+        Time._lastFixedFrameTime = t1;
+    }
+
+    public static sleep(t: number) {
         return new Promise(resolve => setTimeout(resolve, t));
     }
 
-    static async waitUntil(check: () => boolean){
+    public static async waitUntil(check: () => boolean){
         while(!check())
-            await this.sleep(1);
+            await Time.sleep(1);
+    }
+
+    private static clearPauseTimeout() {
+        if (Time._pauseTimeOut != undefined) {
+            clearTimeout(Time._pauseTimeOut);
+            Time._pauseTimeOut = undefined;
+        }
     }
 }
