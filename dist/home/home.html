@@ -6,8 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MotionScript</title>
 
-    <script src="https://unpkg.com/lodash@4.16.6"></script>
-
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Nunito&display=swap" rel="stylesheet">
@@ -16,7 +14,7 @@
 
     <script src="https://requirejs.org/docs/release/2.3.6/comments/require.js"></script>
     <script type="module" src='../build/main.js'></script>
-    <script>requirejs(["home/src/Test"])</script>
+    <script src='home.js'></script>
 </head>
 <body>
     <header>
@@ -26,7 +24,7 @@
     <div class="CenterHorizontal">
         <canvas id="mainCanvas"></canvas>
         <div>
-            <button id="playBtn">
+            <button id="playBtn" onclick='onTimeToggle()'>
                 <img src="assets/play-svgrepo-com.svg"></img>
             </button>
         </div>
