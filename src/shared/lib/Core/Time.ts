@@ -3,10 +3,11 @@ import { MotionScript } from './MotionScript';
 export class Time {
     private static _pauseTimeOut: number = undefined;
 
+    private static _timeScale: number = 1;
     private static _targetFps: number = 60;
     private static _paused: boolean = false;
     
-    private static _targetDeltaTime: number = Math.round(1000/Time._targetFps);
+    private static _targetDeltaTime: number = Math.round(Time._timeScale * 0.001 * Time._targetFps);
 
     private static _deltaTime: number = 0;
     private static _fixedDeltaTime: number = Time._targetDeltaTime;
@@ -22,38 +23,48 @@ export class Time {
     
     private static _instanceTime: number = Date.now();
     
-    public static get targetFps(): number { return Time._targetFps; }
-    public static set targetFps(value: number) { Time._targetFps = value; Time._targetDeltaTime = value  * 1000; }
+    public static get timeScale(): number      { return Time._timeScale;                                                   }
+    public static set timeScale(value: number) { Time._timeScale = value; Time.targetFps = Time._targetFps;                }
+
+    public static get targetFps(): number      { return Time._targetFps;                                                   }
+    public static set targetFps(value: number) { Time._targetFps = value; Time._targetDeltaTime = value  * Time.timeScale; }
     
-    public static get paused(): boolean { return Time._paused; }
+    public  static get paused(): boolean      { return Time._paused;  }
     private static set paused(value: boolean) { Time._paused = value; }
     
-    public static get targetDeltaTime(): number { return Time._targetDeltaTime; }
-    public static set targetDeltaTime(value: number) { Time._targetDeltaTime = value; Math.round(Time._targetFps = 1000 /value); }
+    public static get targetDeltaTime(): number      { return Time._targetDeltaTime;                                                     }
+    public static set targetDeltaTime(value: number) { Time._targetDeltaTime = value; Time._targetFps = Time._timeScale * 0.001 * value; }
     
-    public static get deltaTime(): number { return Time._deltaTime; }
+    public  static get deltaTime(): number      { return Time._deltaTime;  }
     private static set deltaTime(value: number) { Time._deltaTime = value; }
     
-    public static get fixedDeltaTime(): number { return Time._fixedDeltaTime; }
+    public static get fixedDeltaTime(): number      { return Time._fixedDeltaTime;                                 }
     public static set fixedDeltaTime(value: number) { Time._fixedDeltaTime = value; MotionScript.beginFixedLoop(); }
     
-    public static get realDeltaTime(): number { return Time._realDeltaTime; }
+    public static  get realDeltaTime(): number      { return Time._realDeltaTime;  }
     private static set realDeltaTime(value: number) { Time._realDeltaTime = value; }
 
-    public static get realFixedDeltaTime(): number { return Time._realFixedDeltaTime; }
+    public static get realFixedDeltaTime(): number      { return Time._realFixedDeltaTime;  }
     public static set realFixedDeltaTime(value: number) { Time._realFixedDeltaTime = value; }
     
-    public static get frameCount(): number { return Time._frameCount; }
+    public  static get frameCount(): number      { return Time._frameCount;  }
     private static set frameCount(value: number) { Time._frameCount = value; }  
 
-    public static get fixedFrameCount(): number { return Time._fixedFrameCount; }
+    public  static get fixedFrameCount(): number      { return Time._fixedFrameCount;  }
     private static set fixedFrameCount(value: number) { Time._fixedFrameCount = value; }
+
+    private static get lastFrameTime(): number      { return Time._lastFrameTime;  }
+    private static set lastFrameTime(value: number) { Time._lastFrameTime = value; }
+
+    private static get lastFixedFrameTime(): number      { return Time._lastFixedFrameTime;  }
+    private static set lastFixedFrameTime(value: number) { Time._lastFixedFrameTime = value; }
 
     /**
      * Pauses time
      * @param [length] how long should it be paused
      */
     public static pause(length: number = undefined){
+        if(Time.paused) return;
         Time.paused = true;
 
         if(length != undefined) 
@@ -64,6 +75,7 @@ export class Time {
      * Resumes time
      */
     public static resume() {
+        if(!Time.paused) return;
         Time.clearPauseTimeout();
         Time.paused = false;
     }
@@ -92,7 +104,7 @@ export class Time {
     /**
      * Gets current time since the game loaded.
      */
-    public static get time(): number { return Time.realTime - Time.instanceTime; }
+    public static get time(): number { return (Time.realTime - Time.instanceTime) * Time.timeScale; }
 
     /**
      * Advances the frame count
@@ -110,7 +122,7 @@ export class Time {
          * 6. [ bdt = (dt0 + dt1) * 0.25 + tdt  * 0.5    ] => finally, we can store the target delta time, so we don't have to compute it every frame
          */
 
-        const t0  = Time._lastFrameTime;            // time last frame         (-)
+        const t0  = Time.lastFrameTime;            // time last frame         (-)
         const t1  = Time.time;                      // time this frame         (-)
         const tdt = this.targetDeltaTime            // target delta time       (1)
         const dt0 = Time.realDeltaTime;             // last frame's delta time (-)
@@ -118,10 +130,10 @@ export class Time {
         const bdt = (dt0 + dt1) * 0.5 + tdt;        // biased delta time       (6)
 
         if(bdt) {
-            Time._lastFrameTime = t1;
-            Time.realDeltaTime = dt1;
-            Time.deltaTime = Math.round(bdt);
-            Time.frameCount += silent ? 0 : 1;
+            Time.lastFrameTime = t1;
+            Time.realDeltaTime = dt1 * Time.timeScale;
+            Time.deltaTime     = Math.round(bdt) * Time.timeScale;
+            Time.frameCount   += silent ? 0 : 1;
             return true;
         }
         else{
@@ -138,9 +150,9 @@ export class Time {
         const t0 = Time._lastFixedFrameTime;
         const t1 = Time.time;
 
-        Time.fixedFrameCount += silent ? 0 : 1;
-        Time.realFixedDeltaTime = t1 - t0;
-        Time._lastFixedFrameTime = t1;
+        Time.fixedFrameCount   += silent ? 0 : 1;
+        Time.realFixedDeltaTime = (t1 - t0) * Time.timeScale;
+        Time.lastFixedFrameTime = t1 * Time.timeScale;
     }
 
     public static sleep(t: number) {

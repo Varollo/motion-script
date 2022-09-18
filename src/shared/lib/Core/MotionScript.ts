@@ -13,14 +13,13 @@ export namespace MotionScript{
     const fixedUpdateEvent = new MSEvent(MSEventKeys.FixedUpdate);
     const fixedDrawEvent = new MSEvent(MSEventKeys.FixedDraw);
 
-    let objectsLoading = 0;
+    let objectsLoading: number[] = [];
     let fixedInterval = undefined;
 
-    window.addEventListener("load", async function(e){         
-
+    window.addEventListener("load", async function(e){      
         MS.dispatchEvent(loadEvent);        
-        if(objectsLoading > 0)
-            await Time.waitUntil(() => objectsLoading <= 0);
+        if(objectsLoading.length > 0)
+            await Time.waitUntil(() => objectsLoading.length <= 0);
 
         MS.dispatchEvent(setupEvent);
 
@@ -37,8 +36,10 @@ export namespace MotionScript{
             requestAnimationFrame(nextFrame);
 
             function gameLoop(){
-                updateEvent.detail = { deltaTime: Time.deltaTime, realDeltaTime: Time.realDeltaTime };
-                drawEvent.detail = { deltaTime: Time.deltaTime, realDeltaTime: Time.realDeltaTime };
+                const eventDetail = { deltaTime: Time.deltaTime, realDeltaTime: Time.realDeltaTime, isFixedTime: false }
+
+                updateEvent.detail = eventDetail;
+                drawEvent.detail =   eventDetail;
 
                 MS.dispatchEvent(updateEvent);
                 MS.dispatchEvent(drawEvent);
@@ -64,9 +65,10 @@ export namespace MotionScript{
         else{
             fixedInterval = setInterval(() => {
                 Time.advanceFixedFrame(Time.paused);
+                const eventDetail = { deltaTime: Time.fixedDeltaTime, realDeltaTime: Time.realFixedDeltaTime, isFixedTime: true }
     
-                fixedUpdateEvent.detail = { deltaTime: Time.fixedDeltaTime, realDeltaTime: Time.realFixedDeltaTime };
-                fixedDrawEvent.detail = { deltaTime: Time.fixedDeltaTime, realDeltaTime: Time.realFixedDeltaTime };
+                fixedUpdateEvent.detail = eventDetail;
+                fixedDrawEvent.detail = eventDetail;
     
                 MS.dispatchEvent(fixedUpdateEvent);
                 MS.dispatchEvent(fixedDrawEvent);

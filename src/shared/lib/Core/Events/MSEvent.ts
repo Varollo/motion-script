@@ -17,7 +17,7 @@ export class MSEvent implements Event {
     target: EventTarget;
     timeStamp: number;
     type: string;
-    detail: { deltaTime: number; realDeltaTime: number; };
+    detail: { deltaTime: number; realDeltaTime: number; isFixedTime: boolean};
 
     private event: CustomEvent;
     private updateEvent(event: CustomEvent) {
