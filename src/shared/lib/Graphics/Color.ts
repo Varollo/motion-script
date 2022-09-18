@@ -1,6 +1,8 @@
 import { Debugger } from '../Debug/Debugger.js';
 
-export class Color {
+export type color = Color | string | CanvasGradient | CanvasPattern;
+
+export class Color{
     public r: number;
     public g: number;
     public b: number;
