@@ -1,20 +1,22 @@
-import { Color } from '../Color';
-import { IBackground } from './IBackground';
-import { Graphics } from '../Graphics';
-import { Rectangle } from '../Rectangle';
-import { Debugger } from '../../Debug/Debugger';
+import { Color, color } from '../Color';
+import { Background } from './Background';
+import { Graphics2D } from '../Graphics';
 
-export class FlatBackground implements IBackground{
-    
-    fill: string | Color;
+export class FlatBackground implements Background{
 
-    constructor(fill: Color | string = Color.black) {
+    constructor({ fill, isFixedDraw = false }: { fill: color; isFixedDraw?: boolean; }) {
         this.fill = fill;
+        this.isFixedDraw = isFixedDraw;
     }
 
-    drawBackground2D(ctx: CanvasRenderingContext2D, deltaTime: number) {
-        const canvas = ctx.canvas;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    origin:      { x: number; y: number; };
+    scale:       { x: number; y: number; };
+    rotation:    number;
+    fill:        color;
+    isFixedDraw: boolean;
+
+    drawBackground2D(ctx: CanvasRenderingContext2D, deltaTime: number) { 
+        Graphics2D.clear(this.fill, ctx);
     }
 
     drawBackgroundWebGL(ctx: WebGLRenderingContext, deltaTime: number) {
